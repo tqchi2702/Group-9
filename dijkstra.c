@@ -8,7 +8,7 @@ void Dijkstra(int Graph[MAX][MAX], int n, int start, int destination) {
     int cost[MAX][MAX], distance[MAX], pred[MAX];
     int visited[MAX], count, mindistance, nextnode, i, j;
 
-    // Khoi tao ma tran chi phí 
+    // Khoi tao ma tran chi phÃ­ 
     for (i = 0; i < n; i++)
         for (j = 0; j < n; j++)
             if (Graph[i][j] == 0)
@@ -16,7 +16,7 @@ void Dijkstra(int Graph[MAX][MAX], int n, int start, int destination) {
             else
                 cost[i][j] = Graph[i][j];
 
-    // Khoi tao cac mang distance, pred và visited  
+    // Khoi tao cac mang distance, pred vÃ  visited  
     // distance: luu khoang cach ngan nhat tu node bat dau den node [i] 
     for (i = 0; i < n; i++) {
         distance[i] = cost[start][i];
@@ -31,7 +31,7 @@ void Dijkstra(int Graph[MAX][MAX], int n, int start, int destination) {
     while (count < n - 1) {
         mindistance = INFINITY;
 
-        // TTim node tiep theo co khoang cach nho nhat 
+        // Tim node tiep theo co khoang cach nho nhat 
         for (i = 0; i < n; i++)
             if (distance[i] < mindistance && !visited[i]) {
                 mindistance = distance[i];
@@ -54,7 +54,7 @@ void Dijkstra(int Graph[MAX][MAX], int n, int start, int destination) {
     printf("\nDistance from Node %d to Node %d: %d\n", start + 1, destination + 1, distance[destination]);
     printf("Path: ");
 
-    // In các nodes trên duong di 
+    // In cÃ¡c nodes trÃªn duong di 
     int path[MAX];
     int path_index = 0;
     j = destination;
@@ -89,6 +89,10 @@ int main() {
         printf("Node %d: ", i + 1);
         for (j = 0; j < n; j++) {
             scanf("%d", &Graph[i][j]);
+            if (Graph[i][j] < 0) {
+                printf("Graph contains negative weight at edge. Dijkstra's algorithm cannot be used.\n");
+                return 1; // dung chuong trinh 
+            }
         }
     }
 
@@ -99,7 +103,7 @@ int main() {
     printf("Enter the destination node index (1 to %d): ", n);
     scanf("%d", &destination);
 
-    // Chuyen các chi so ve mang bat dau tu 0 
+    // Chuyen cÃ¡c chi so ve mang bat dau tu 0 
     start--;
     destination--;
 
