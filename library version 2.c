@@ -32,6 +32,17 @@ struct returnBook {
     struct returnBook* next;
 };
 
+struct Admin {
+	char username[20];
+	char password[20]; 
+}; 
+
+struct Admin users[10]={
+	{"admin1", "admin1"},
+	{"admin2", "admin2"},
+	{"user", "123"}
+}; 
+
 // Hash tables for books and customers
 struct Book* BookTable[TABLE_SIZE];
 struct Customer* CustomerTable[TABLE_SIZE];
@@ -234,39 +245,64 @@ void manageReturnBook() {
     }
 }
 
+int login() {
+	char username[20], password[20];
+	 int isAuthenticated = 0;
+
+    printf("Enter username: ");
+    scanf("%s", username);
+    printf("Enter password: ");
+    scanf("%s", password);
+    
+    int i; 
+    for (i = 0; i < 3; i++) {
+        if (strcmp(username, users[i].username) == 0 && strcmp(password, users[i].password) == 0) {
+            isAuthenticated = 1;
+            break;
+        }
+    }
+    return isAuthenticated;
+}
+
 // Main function
 int main() {
     int choice;
-    while (1) {
-        printf("\nLibrary Management System\n");
-        printf("1. Manage Books\n");
-        printf("2. Manage Customers\n");
-        printf("3. Manage Borrowed Books\n");
-        printf("4. Manage Returned Books\n");
-        printf("5. Exit\n");
-        printf("Enter your choice: ");
-        scanf("%d", &choice);
+    if (login()) {
+        printf("Login successful!\n");
+        while (1) {
+            printf("\nLibrary Management System\n");
+            printf("1. Manage Books\n");
+            printf("2. Manage Customers\n");
+            printf("3. Manage Borrowed Books\n");
+            printf("4. Manage Returned Books\n");
+            printf("5. Exit\n");
+            printf("Enter your choice: ");
+            scanf("%d", &choice);
 
-        switch (choice) {
-            case 1:
-                manageBook();
-                break;
-            case 2:
-                manageCustomer();
-                break;
-            case 3:
-                manageBorrowBook();
-                break;
-            case 4:
-                manageReturnBook();
-                break;
-            case 5:
-                printf("Exiting system. Goodbye!\n");
-                return 0;
-            default:
-                printf("Invalid choice. Try again.\n");
+            switch (choice) {
+                case 1:
+                    manageBook();
+                    break;
+                case 2:
+                    manageCustomer();
+                    break;
+                case 3:
+                    manageBorrowBook();
+                    break;
+                case 4:
+                    manageReturnBook();
+                    break;
+                case 5:
+                    printf("Exiting system. Goodbye!\n");
+                    return 0;
+                default:
+                    printf("Invalid choice. Try again.\n");
+            }
         }
+    } else {
+        printf("Invalid username or password. Exiting...\n");
     }
+
     return 0;
 }
 
