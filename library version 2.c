@@ -75,7 +75,142 @@ void editBook() {
 void deleteBook() {
 }
 
+// Sort book by quantity
+// split
+void splitBook(struct Book* source, struct Book** left, struct Book** right) {
+    struct Book* slow = source;
+    struct Book* fast = source->next;
+    while (fast && fast->next) {
+        slow = slow->next;
+        fast = fast->next->next;
+    }
+    *left = source;
+    *right = slow->next;
+    slow->next = NULL;
+}
+
+// merge
+struct Book* mergeSortedBooks(struct Book* left, struct Book* right) {
+    if (!left) return right;
+    if (!right) return left;
+
+    if (left->quantity <= right->quantity) {
+        left->next = mergeSortedBooks(left->next, right);
+        return left;
+    } else {
+        right->next = mergeSortedBooks(left, right->next);
+        return right;
+    }
+}
+
+// merge sort
+void sortBook(struct Book** headRef) {
+    struct Book* head = *headRef;
+    if (!head || !head->next) return;
+
+    struct Book* left;
+    struct Book* right;
+    splitBook(head, &left, &right);
+    sortBook(&left);
+    sortBook(&right);
+    *headRef = mergeSortedBooks(left, right);
+}
+
+// sort and display
+void sortBooksByQuantity() {
+    struct Book* list = NULL, *tail = NULL;
+    
+    int i;
+    for (i = 0; i < TABLE_SIZE; i++) {
+        struct Book* current = BookTable[i];
+        while (current) {
+            if (!list) list = tail = current;
+            else { tail->next = current; tail = current; }
+            current = current->next;
+        }
+    }
+    if (tail) tail->next = NULL;
+
+    sortBook(&list);
+
+    printf("Books sorted by quantity:\n");
+    struct Book* temp = list;
+    while (temp) {
+        printf("ID: %d, Title: %s, Quantity: %d\n", temp->book_id, temp->title, temp->quantity);
+        temp = temp->next;
+    }
+}
+
+// Search Book_id
+int findBookByID(int book_id) {
+    int m = TABLE_SIZE;
+    int hKey1 = book_id % m;
+    int hKey2 = 7 - (book_id % (m - 3));
+    int index;
+    int  i;
+    for (i = 0; i < TABLE_SIZE; i++) {
+        index = (hKey1 + i * hKey2) % m;
+        // Tim sach bang ID
+        if (BookTable[index] != NULL && BookTable[index]->book_id == book_id) {
+            return index; 
+        }
+        if (BookTable[index] == NULL) {
+            return -1; // Không tìm th?y
+        }
+    }
+    return -1; // Không tìm thay
+}
+void searchBookID() {
+    int book_id;
+    printf("Enter the book ID to search: ");
+    scanf("%d", &book_id);
+
+    int index = findBookByIDDoubleHashing(book_id);
+    if (index != -1) {
+        struct Book* book = BookTable[index];
+        printf("Book found: ID = %d, Title = %s, Author = %s, Quantity = %d\n",
+               book->book_id, book->title, book->author, book->quantity);
+    } else {
+        printf("Book not found.\n");
+    }
+}
+
 //Manage Customer 
+// Search customer name
+int findCustomerByName(const char* customer_name) {
+    unsigned int key = hash(customer_name);
+    int m = TABLE_SIZE;
+    int hKey1 = key % m;
+    int hKey2 = 7 - (key % (m - 3));
+    int index;
+    int  i;
+    for (i = 0; i < TABLE_SIZE; i++) {
+        index = (hKey1 + i * hKey2) % m;
+        if (CustomerTable[index] != NULL &&
+            strcmp(CustomerTable[index]->customer_name, customer_name) == 0) {
+            return index; // Tìm th?y khách hàng
+        }
+        if (CustomerTable[index] == NULL) {
+            return -1; // Không tìm th?y
+        }
+    }
+    return -1; // Không tìm thay sau khi duyet
+}
+void searchCustomer() {
+    char customer_name[30];
+    printf("Enter the customer name to search: ");
+    scanf(" %[^\n]", customer_name);
+
+    int index = findCustomerByName(customer_name);
+    if (index != -1) {
+        struct Customer* customer = CustomerTable[index];
+        printf("Customer found: Name = %s, Phone = %s\n",
+               customer->customer_name, customer->phone);
+    } else {
+        printf("Customer not found.\n");
+    }
+}
+
 void displayCustomer() {
 }
 
@@ -128,7 +263,9 @@ void manageBook() {
         printf("2. Add book\n");
         printf("3. Edit book\n");
         printf("4. Delete book\n");
-        printf("5. Back to main menu\n");
+        printf("5. Sort books by quantity\n");
+        printf("6. Search book by ID\n");
+        printf("7. Back to main menu\n");
         printf("Enter your choice: ");
         scanf("%d", &choice);
 
@@ -146,6 +283,12 @@ void manageBook() {
                 deleteBook();
                 break;
             case 5:
+                sortBooksByQuantity();  
+                break;
+            case 6:
+                searchBookID();  
+                break;
+            case 7:
                 return;
             default:
                 printf("Invalid choice. Try again.\n");
@@ -159,7 +302,8 @@ void manageCustomer() {
         printf("\n1. Display the customer\n");
         printf("2. Edit customer information\n");
         printf("3. Delete customer\n");
-        printf("4. Back to main menu\n");
+	printf("4. Search customer information by name\n");
+        printf("d. Back to main menu\n");
         printf("Enter your choice: ");
         scanf("%d", &choice);
 
@@ -173,7 +317,10 @@ void manageCustomer() {
             case 3:
                 deleteCustomer();
                 break;
-            case 4:
+	    case 4:
+                searchCustomer();
+                break;
+            case 5:
                 return;
             default:
                 printf("Invalid choice. Try again.\n");
