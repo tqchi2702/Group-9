@@ -151,22 +151,23 @@ int findBookByID(int book_id) {
     for (i = 0; i < TABLE_SIZE; i++) {
         index = (hKey1 + i * hKey2) % m;
         // Tim sach bang ID
-        if (BookTable[index] != NULL && BookTable[index]->book_id == book_id) {
-            return index; 
-        }
-        if (BookTable[index] == NULL) {
-            return -1; // Không tìm th?y
-        }
+        if (BookTable[index] != NULL) {
+            if (BookTable[index]->book_id == book_id) {
+                return index; 
+            }
+        } else {
+        return -1;
     }
-    return -1; // Không tìm thay
+}
+    return -1;
 }
 void searchBookID() {
     int book_id;
     printf("Enter the book ID to search: ");
     scanf("%d", &book_id);
 
-    int index = findBookByIDDoubleHashing(book_id);
-    if (index != -1) {
+    int index = findBookByID(book_id);
+    if (index != -1) { 
         struct Book* book = BookTable[index];
         printf("Book found: ID = %d, Title = %s, Author = %s, Quantity = %d\n",
                book->book_id, book->title, book->author, book->quantity);
@@ -186,15 +187,15 @@ int findCustomerByName(const char* customer_name) {
     int  i;
     for (i = 0; i < TABLE_SIZE; i++) {
         index = (hKey1 + i * hKey2) % m;
-        if (CustomerTable[index] != NULL &&
-            strcmp(CustomerTable[index]->customer_name, customer_name) == 0) {
-            return index; // Tìm th?y khách hàng
-        }
-        if (CustomerTable[index] == NULL) {
-            return -1; // Không tìm th?y
-        }
+        if (CustomerTable[index] != NULL) {
+             if (strcmp(CustomerTable[index]->customer_name, customer_name) == 0) {
+                 return index; 
+             }
+        } else {
+        return -1;
     }
-    return -1; // Không tìm thay sau khi duyet
+}
+    return -1;
 }
 void searchCustomer() {
     char customer_name[30];
