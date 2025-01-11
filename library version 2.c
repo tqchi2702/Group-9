@@ -14,7 +14,9 @@ struct Book {
 };
 
 struct Customer {
+	int customer_id; 
     char customer_name[30];
+    char address[50];
     char phone[15];
     struct Customer* next;
 };
@@ -40,7 +42,6 @@ struct Admin {
 struct Admin users[10]={
 	{"admin1", "admin1"},
 	{"admin2", "admin2"},
-	{"user", "123"}
 }; 
 
 // Hash tables for books and customers
@@ -49,6 +50,7 @@ struct Customer* CustomerTable[TABLE_SIZE];
 struct borrowBook* borrowBookTable[TABLE_SIZE];
 struct returnBook* returnBookTable[TABLE_SIZE];
 
+const char* FILENAME = "cus_final.csv";
 // Hash function
 unsigned int hash(const char* key) {
     unsigned int hash = 0;
@@ -210,18 +212,200 @@ void searchCustomer() {
         printf("Customer not found.\n");
     }
 }
-
-void displayCustomer() {
+// Hash function
+unsigned int hash(int customer_id) {
+    return customer_id % TABLE_SIZE;
 }
 
+
+// Function to find customer by ID
+int findCustomerByID(int customer_id) {
+    unsigned int index = hash(customer_id);
+
+    struct Customer* current = CustomerTable[index];
+    while (current) {
+        if (current->customer_id == customer_id) {
+            return 1; // Customer found
+        }
+        current = current->next;
+    }
+    return 0; // Customer not found
+}
+
+
+// Load customer data from file
+void load_data() {
+    FILE* file = fopen(FILENAME, "r");
+    if (!file) {
+        printf("Error: Unable to open file %s for reading.\n", FILENAME);
+        return;
+    }
+
+    char line[200];
+    while (fgets(line, sizeof(line), file)) {
+        int customer_id;
+        char customer_name[30], address[50], phone[15];
+        if (sscanf(line, "%d,%29[^,],%49[^,],%14s", &customer_id, customer_name, address, phone) == 4) {
+            unsigned int index = hash(customer_id);
+
+            struct Customer* newCustomer = (struct Customer*)malloc(sizeof(struct Customer));
+            if (!newCustomer) {
+                printf("Error: Memory allocation failed.\n");
+                fclose(file);
+                return;
+            }
+            newCustomer->customer_id = customer_id;
+            strcpy(newCustomer->customer_name, customer_name);
+            strcpy(newCustomer->address, address);
+            strcpy(newCustomer->phone, phone);
+            newCustomer->next = CustomerTable[index];
+            CustomerTable[index] = newCustomer;
+        }
+    }
+
+    fclose(file);
+    printf("Data loaded successfully from %s.\n", FILENAME);
+}
+
+// Save customer data to file
+void save_data(const char* filename) {
+    FILE* file = fopen(filename, "w");
+    if (!file) {
+        printf("Error: Unable to open file %s for writing.\n", filename);
+        return;
+    }
+
+    for (int i = 0; i < TABLE_SIZE; i++) {
+        struct Customer* current = CustomerTable[i];
+        while (current) {
+            fprintf(file, "%d,%s,%s,%s\n", current->customer_id, current->customer_name, current->address, current->phone);
+            current = current->next;
+        }
+    }
+
+    fclose(file);
+    printf("Data saved successfully to %s.\n", filename);
+}
+
+// Add a new customer
+void addCustomer() {
+    int customer_id;
+    char customer_name[30];
+    char address[50];
+    char phone[15];
+
+    printf("Enter customer ID: ");
+    scanf("%d", &customer_id);
+
+    if (findCustomerByID(customer_id)) {
+        printf("Customer ID %d already exists in the system.\n", customer_id);
+        return;
+    }
+
+    printf("Enter customer name: ");
+    scanf(" %[^\n]", customer_name);
+
+    printf("Enter address: ");
+    scanf(" %[^\n]", address);
+
+    int validPhone = 0;
+    while (!validPhone) {
+        printf("Enter phone number (10 digits only): ");
+        scanf("%s", phone);
+
+        if (strlen(phone) == 10) {
+            validPhone = 1;
+            for (int i = 0; i < 10; i++) {
+                if (!isdigit(phone[i])) {
+                    validPhone = 0;
+                    break;
+                }
+            }
+        }
+
+        if (!validPhone) {
+            printf("Invalid phone number! Please enter exactly 10 digits (no letters or special characters).\n");
+        }
+    }
+
+    unsigned int index = hash(customer_id);
+
+    struct Customer* newCustomer = (struct Customer*)malloc(sizeof(struct Customer));
+    if (!newCustomer) {
+        printf("Error: Memory allocation failed.\n");
+        return;
+    }
+    newCustomer->customer_id = customer_id;
+    strcpy(newCustomer->customer_name, customer_name);
+    strcpy(newCustomer->address, address);
+    strcpy(newCustomer->phone, phone);
+    newCustomer->next = CustomerTable[index];
+    CustomerTable[index] = newCustomer;
+
+    save_data(FILENAME); // Save data after adding a new customer
+
+    printf("Customer added successfully with ID: %d\n", customer_id);
+}
+// Display all customers
+void displayCustomer() {
+    printf("Customer List:\n");
+    for (int i = 0; i < TABLE_SIZE; i++) {
+        struct Customer* current = CustomerTable[i];
+        while (current) {
+            printf("ID: %d, Name: %s, Address: %s, Phone: %s\n",
+                   current->customer_id, current->customer_name, current->address, current->phone);
+            current = current->next;
+        }
+    }
+}
 
 void editCustomer() {
+    int customer_id;
+    printf("Enter the customer ID to update: ");
+    scanf("%d", &customer_id); 
+    
+    int index = findCustomerByID(customer_id); 
+    if (index != -1) {
+        struct Customer* customer = CustomerTable[index];
+        printf("Enter new address: ");
+        scanf(" %[^'\n']s", customer->address);
+        printf("Enter new phone number: ");
+        scanf("%s", customer->phone);
+        printf("Customer updated successfully.\n");
+    } else {
+        printf("Customer not found.\n");
+    }
 }
-
 
 void deleteCustomer() {
-}
+    int customer_id;
+    printf("Enter the customer ID to delete: ");
+    scanf("%d", &customer_id);
 
+    int index = findCustomerByID(customer_id);  // Find customer by ID instead of name
+    if (index != -1) {
+        struct Customer* current = CustomerTable[index];
+        struct Customer* prev = NULL;
+        
+        // Search for the customer in the list
+        while (current) {
+            if (current->customer_id == customer_id) {
+                if (prev) {
+                    prev->next = current->next;  // Remove the customer from the list
+                } else {
+                    CustomerTable[index] = current->next;  // Remove head node
+                }
+                free(current);  // Free memory
+                printf("Customer deleted successfully.\n");
+                return;
+            }
+            prev = current;
+            current = current->next;
+        }
+    } else {
+        printf("Customer not found.\n");
+    }
+}
 
 void displayborrowBook() {
 }
@@ -245,14 +429,94 @@ void displayreturnBook() {
 
 //Manage Return Book 
 void addreturnBook() {
+    int borrow_id, book_id;
+    int customer_id;
+
+    printf("Enter borrow ID: ");
+    scanf("%d", &borrow_id);
+    printf("Enter book ID: ");
+    scanf("%d", &book_id);
+    printf("Enter customer ID: ");
+    scanf("%d", &customer_id);
+
+    int customerIndex = findCustomerByID(customer_id);
+    int bookIndex = findBookByID(book_id);
+
+    if (customerIndex != -1 && bookIndex != -1) {
+        struct returnBook* newReturn = (struct returnBook*)malloc(sizeof(struct returnBook));
+        newReturn->borrow_id = borrow_id;
+        char customer_id_str[20];  
+        sprintf(customer_id_str, "%d", customer_id);  
+        unsigned int key = hash(customer_id_str);
+        int index = key % TABLE_SIZE;
+        newReturn->next = returnBookTable[index];
+        returnBookTable[index] = newReturn;
+
+        BookTable[bookIndex]->quantity += 1;
+        printf("Return added successfully and book quantity updated.\n");
+    } else {
+        printf("Invalid customer ID or book ID.\n");
+    }
 }
 
 
 void editreturnBook() {
+    int borrow_id;
+    printf("Enter the borrow ID to update: ");
+    scanf("%d", &borrow_id);
+
+    for (int i = 0; i < TABLE_SIZE; i++) {
+        struct returnBook* current = returnBookTable[i];
+        while (current) {
+            if (current->borrow_id == borrow_id) {
+                printf("Enter new borrow ID: ");
+                scanf("%d", &current->borrow_id);
+                printf("Return book updated successfully.\n");
+                return;
+            }
+            current = current->next;
+        }
+    }
+    printf("Return book not found.\n");
 }
 
 
 void deletereturnBook() {
+    int borrow_id;
+    printf("Enter the borrow ID to delete: ");
+    scanf("%d", &borrow_id);
+
+    for (int i = 0; i < TABLE_SIZE; i++) {
+        struct returnBook* current = returnBookTable[i];
+        struct returnBook* prev = NULL;
+        while (current) {
+            if (current->borrow_id == borrow_id) {
+                if (prev) {
+                    prev->next = current->next;
+                } else {
+                    returnBookTable[i] = current->next;
+                }
+                free(current);
+                printf("Return book deleted successfully.\n");
+                return;
+            }
+            prev = current;
+            current = current->next;
+        }
+    }
+    printf("Return book not found.\n");
+}
+
+// Display all return books
+void displayReturnBooks() {
+    printf("\nList of Return Books:\n");
+    for (int i = 0; i < TABLE_SIZE; i++) {
+        struct returnBook* current = returnBookTable[i];
+        while (current) {
+            printf("Borrow ID: %d\n", current->borrow_id);
+            current = current->next;
+        }
+    }
 }
 
 // Menu functions
@@ -297,13 +561,16 @@ void manageBook() {
 }
 
 void manageCustomer() {
+    load_data(); // Load data from file before managing customers
+
     int choice;
     while (1) {
         printf("\n1. Display the customer\n");
-        printf("2. Edit customer information\n");
-        printf("3. Delete customer\n");
-	printf("4. Search customer information by name\n");
-        printf("d. Back to main menu\n");
+        printf("2. Add customer information\n");
+        printf("3. Edit customer information\n");
+        printf("4. Delete customer\n");
+        printf("5. Search customer information by name\n");
+        printf("6. Back to main menu\n");
         printf("Enter your choice: ");
         scanf("%d", &choice);
 
@@ -312,15 +579,19 @@ void manageCustomer() {
                 displayCustomer();
                 break;
             case 2:
-                editCustomer();
+                addCustomer();
                 break;
             case 3:
+                editCustomer();
+                break;
+            case 4:
                 deleteCustomer();
                 break;
-	    case 4:
+            case 5:
                 searchCustomer();
                 break;
-            case 5:
+            case 6:
+                save_data(FILENAME); // Save data before exiting
                 return;
             default:
                 printf("Invalid choice. Try again.\n");
