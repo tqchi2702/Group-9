@@ -562,11 +562,19 @@ void load_data() {
         printf("Error: Unable to open file %s for reading.\n", FILENAME);
         return;
     }
+
     char line[200];
     while (fgets(line, sizeof(line), file)) {
         int customer_id;
         char customer_name[30], address[50], phone[15];
+
+        // Read data from the line
         if (sscanf(line, "%d,%29[^,],%49[^,],%14s", &customer_id, customer_name, address, phone) == 4) {
+            // Remove leading single quote from phone number if it exists
+            if (phone[0] == '\'') {
+                memmove(phone, phone + 1, strlen(phone)); // Shift the string left
+            }
+
             unsigned int index = hash(customer_id);
 
             struct Customer* newCustomer = (struct Customer*)malloc(sizeof(struct Customer));
@@ -575,14 +583,16 @@ void load_data() {
                 fclose(file);
                 return;
             }
+
             newCustomer->customer_id = customer_id;
             strcpy(newCustomer->customer_name, customer_name);
             strcpy(newCustomer->address, address);
-            strcpy(newCustomer->phone, phone);
+            strcpy(newCustomer->phone, phone); // Save the cleaned phone number
             newCustomer->next = CustomerTable[index];
             CustomerTable[index] = newCustomer;
         }
     }
+
     fclose(file);
     printf("Data loaded successfully from %s.\n", FILENAME);
 }
@@ -608,20 +618,29 @@ void save_data(const char* filename) {
     printf("Data saved successfully to %s.\n", filename);
 }
 
+int getMaxCustomerID() {
+    int max_id = 0;
+    for (int i = 0; i < TABLE_SIZE; i++) {
+        struct Customer* current = CustomerTable[i];
+        while (current) {
+            if (current->customer_id > max_id) {
+                max_id = current->customer_id;
+            }
+            current = current->next;
+        }
+    }
+    return max_id;
+}
 // Add a new customer
 void addCustomer() {
-    int customer_id;
-    char customer_name[30];
-    char address[50];
-    char phone[15];
-    printf("Enter customer ID: ");
-    scanf("%d", &customer_id);
-    if (findCustomerByID(customer_id)) {
-        printf("Customer ID %d already exists in the system.\n", customer_id);
-        return;
-    }
+    char customer_name[30], address[50], phone[15];
+
+    // Get the maximum current customer ID and assign the next ID
+    int customer_id = getMaxCustomerID() + 1;
+
     printf("Enter customer name: ");
     scanf(" %[^\n]", customer_name);
+
     printf("Enter address: ");
     scanf(" %[^\n]", address);
 
@@ -632,8 +651,7 @@ void addCustomer() {
 
         if (strlen(phone) == 10) {
             validPhone = 1;
-            int i;
-            for (i = 0; i < 10; i++) {
+            for (int i = 0; i < 10; i++) {
                 if (!isdigit(phone[i])) {
                     validPhone = 0;
                     break;
@@ -647,11 +665,13 @@ void addCustomer() {
     }
 
     unsigned int index = hash(customer_id);
+
     struct Customer* newCustomer = (struct Customer*)malloc(sizeof(struct Customer));
     if (!newCustomer) {
         printf("Error: Memory allocation failed.\n");
         return;
     }
+
     newCustomer->customer_id = customer_id;
     strcpy(newCustomer->customer_name, customer_name);
     strcpy(newCustomer->address, address);
@@ -663,6 +683,7 @@ void addCustomer() {
 
     printf("Customer added successfully with ID: %d\n", customer_id);
 }
+
 // Display all customers
 void displayCustomer() {
     printf("Customer List:\n");
