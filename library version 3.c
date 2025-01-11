@@ -184,59 +184,93 @@ void searchBookID() {
 }
 
 //Manage Customer 
-// Search customer name
-int findCustomerByName(const char* customer_name) {
-    unsigned int key = hash_string(customer_name);
+// Search Customer_id
+int findCustomerByID(int book_id) {
     int m = TABLE_SIZE;
-    int hKey1 = key % m;
-    int hKey2 = 7 - (key % (m - 3));
+    int hKey1 = book_id % m;
+    int hKey2 = 7 - (book_id % (m - 3));
     int index;
     int  i;
     for (i = 0; i < TABLE_SIZE; i++) {
         index = (hKey1 + i * hKey2) % m;
-        if (CustomerTable[index] != NULL &&
-            strcmp(CustomerTable[index]->customer_name, customer_name) == 0) {
-            return index; // Tìm th?y khách hàng
+        // Tim sach bang ID
+        if (CustomerTable[index] != NULL && CustomerTable[index]->customer_id == customer_id) {
+            return index; 
         }
         if (CustomerTable[index] == NULL) {
             return -1; // Không tìm th?y
         }
     }
-    return -1; // Không tìm thay sau khi duyet
+    return -1; // Không tìm thay
 }
-void searchCustomer() {
-    char customer_name[30];
-    printf("Enter the customer name to search: ");
-    scanf(" %[^\n]", customer_name);
+void searchCustomerID() {
+    int customer_id;
+    printf("Enter the book ID to search: ");
+    scanf("%d", &customer_id);
 
-    int index = findCustomerByName(customer_name);
+    int index = findCustomerByID(customer_id);
     if (index != -1) {
         struct Customer* customer = CustomerTable[index];
-        printf("Customer found: Name = %s, Phone = %s\n",
-               customer->customer_name, customer->phone);
+        printf("Customer found: ID = %d, Name = %s, Address = %s, Phone = %d\n",
+               ustomer->customer_id, customer->customer_name, customer->address, customer->phone);
     } else {
         printf("Customer not found.\n");
     }
 }
+
+// Search customer name
+// int findCustomerByName(const char* customer_name) {
+//     unsigned int key = hash_string(customer_name);
+//     int m = TABLE_SIZE;
+//     int hKey1 = key % m;
+//     int hKey2 = 7 - (key % (m - 3));
+//     int index;
+//     int  i;
+//     for (i = 0; i < TABLE_SIZE; i++) {
+//         index = (hKey1 + i * hKey2) % m;
+//         if (CustomerTable[index] != NULL &&
+//             strcmp(CustomerTable[index]->customer_name, customer_name) == 0) {
+//             return index; // Tìm th?y khách hàng
+//         }
+//         if (CustomerTable[index] == NULL) {
+//             return -1; // Không tìm th?y
+//         }
+//     }
+//     return -1; // Không tìm thay sau khi duyet
+// }
+// void searchCustomer() {
+//     char customer_name[30];
+//     printf("Enter the customer name to search: ");
+//     scanf(" %[^\n]", customer_name);
+
+//     int index = findCustomerByName(customer_name);
+//     if (index != -1) {
+//         struct Customer* customer = CustomerTable[index];
+//         printf("Customer found: Name = %s, Phone = %s\n",
+//                customer->customer_name, customer->phone);
+//     } else {
+//         printf("Customer not found.\n");
+//     }
+// }
 // Hash function
 //unsigned int hash(int customer_id) {
 //    return customer_id % TABLE_SIZE;
 //}
 
 
-// Function to find customer by ID
-int findCustomerByID(int customer_id) {
-    unsigned int index = hash(customer_id);
+// // Function to find customer by ID
+// int findCustomerByID(int customer_id) {
+//     unsigned int index = hash(customer_id);
 
-    struct Customer* current = CustomerTable[index];
-    while (current) {
-        if (current->customer_id == customer_id) {
-            return 1; // Customer found
-        }
-        current = current->next;
-    }
-    return 0; // Customer not found
-}
+//     struct Customer* current = CustomerTable[index];
+//     while (current) {
+//         if (current->customer_id == customer_id) {
+//             return 1; // Customer found
+//         }
+//         current = current->next;
+//     }
+//     return 0; // Customer not found
+// }
 
 
 // Load customer data from file
