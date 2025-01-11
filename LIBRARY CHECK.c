@@ -25,16 +25,16 @@ void *hashmap_get(HashMap *map, void *key);
 void hashmap_free(HashMap *map);
 
 #endif // HASHMAP_H
-//#define RESET "\x1b[0m"
-//#define RED 12
-//#define YELLOW 14
-//#define BLUE 9
+//#define RESET 0 
+//#define RED 1 
+//#define YELLOW 2 
+//#define BLUE 3 
 //#define BOOK_FILE "books.csv"
-#define RESET "\x1b[0m"     // –?t l?i m‡u v? m?c ?nh
-#define RED "\x1b[31m"       // M‡u ?
-#define YELLOW "\x1b[33m"    // M‡u v‡ng
-#define BLUE "\x1b[34m"      // M‡u xanh lam
-#define BOOK_FILE "books.csv" // TÍn file s·ch
+#define RESET "\x1b[0m"     // ƒê?t l?i m√†u v? m?c ƒë?nh
+#define RED "\x1b[31m"       // M√†u ƒë?
+#define YELLOW "\x1b[33m"    // M√†u v√†ng
+#define BLUE "\x1b[34m"      // M√†u xanh lam
+#define BOOK_FILE "books.csv" // T√™n file s√°ch
 
 
 #define TABLE_SIZE 100
@@ -110,14 +110,15 @@ void hashmap_free(HashMap *map) {
     free(map);
 }
 
-void setColor(int color)
-{
-	void setColor(const char* color) {
-    printf("%s", color);
-//    HANDLE hConsole = GetStdHandle(STD_OUTPUT_HANDLE);
-//    SetConsoleTextAttribute(hConsole, color);
+//void setColor(int color)
+//{
+//	void setColor(const char* color) {
+//    printf("%s", color);
+////    HANDLE hConsole = GetStdHandle(STD_OUTPUT_HANDLE);
+////    SetConsoleTextAttribute(hConsole, color);
+//
+//}
 
-}
 
 struct Book {
     int book_id;
@@ -298,10 +299,10 @@ void read_books_csv(const char *filename)
 }
 void displayBook()
 {
-    printf(YELLOW "All books in the library:\n" RESET);
-    printf(YELLOW "------------------------------------------------------------------------------------------------------------------\n" RESET);
-    printf(YELLOW "| %-10s | %-50s | %-30s | %-10s |\n" RESET, "Book ID", "Title", "Author", "Quantity");
-    printf(YELLOW "------------------------------------------------------------------------------------------------------------------\n" RESET);
+//    printf(YELLOW "All books in the library:\n" RESET);
+//    printf(YELLOW "------------------------------------------------------------------------------------------------------------------\n" RESET);
+//    printf(YELLOW "| %-10s | %-50s | %-30s | %-10s |\n" RESET, "Book ID", "Title", "Author", "Quantity");
+//    printf(YELLOW "------------------------------------------------------------------------------------------------------------------\n" RESET);
     size_t i; 
     for (i = 0; i < bookMap->bucket_count; i++)
     {
@@ -316,7 +317,7 @@ void displayBook()
             node = node->next;
         }
     }
-    printf(YELLOW "------------------------------------------------------------------------------------------------------------------\n" RESET);
+//    printf(YELLOW "------------------------------------------------------------------------------------------------------------------\n" RESET);
 }
 
 void addBook()
@@ -413,29 +414,72 @@ void sortBook(struct Book** headRef) {
     sortBook(&right);
     *headRef = mergeSortedBooks(left, right);
 }
+//
+//// sort and display
+//void sortBookByQuantity() {
+//    struct Book* list = NULL, *tail = NULL;
+//    
+//    int i;
+//    for (i = 0; i < TABLE_SIZE; i++) {
+//        struct Book* current = BookTable[i];
+//        while (current) {
+//            if (!list) list = tail = current;
+//            else { tail->next = current; tail = current; }
+//            current = current->next;
+//        }
+//    }
+//    if (tail) tail->next = NULL;
+//
+//    sortBook(&list);
+//
+//    printf("Books sorted by quantity:\n");
+//    struct Book* temp = list;
+//    while (temp) {
+//        printf("ID: %d, Title: %s, Quantity: %d\n", temp->book_id, temp->title, temp->quantity);
+//        temp = temp->next;
+//    }
+//}
 
-// sort and display
-void sortBooksByQuantity() {
-    struct Book* list = NULL, *tail = NULL;
-    
-    int i;
+void sortBookByQuantity() {
+    struct Book* head = NULL;
+    struct Book* tail = NULL;
+
+    // Iterate through all buckets of the hash table
+    int i; 
     for (i = 0; i < TABLE_SIZE; i++) {
         struct Book* current = BookTable[i];
         while (current) {
-            if (!list) list = tail = current;
-            else { tail->next = current; tail = current; }
+            // Create a new node for each book (to avoid modifying the original list)
+            struct Book* newNode = (struct Book*)malloc(sizeof(struct Book));
+            *newNode = *current; 
+            newNode->next = NULL;
+
+            // Add the new node to the linked list
+            if (!head) {
+                head = tail = newNode;
+            } else {
+                tail->next = newNode;
+                tail = newNode;
+            }
+
             current = current->next;
         }
     }
-    if (tail) tail->next = NULL;
 
-    sortBook(&list);
+    if (tail) {
+        tail->next = NULL; // Ensure the last node's next pointer is NULL
+        sortBook(&head); 
 
-    printf("Books sorted by quantity:\n");
-    struct Book* temp = list;
-    while (temp) {
-        printf("ID: %d, Title: %s, Quantity: %d\n", temp->book_id, temp->title, temp->quantity);
-        temp = temp->next;
+        printf("Books sorted by quantity:\n");
+        struct Book* temp = head;
+        while (temp) {
+            printf("ID: %d, Title: %s, Quantity: %d\n", temp->book_id, temp->title, temp->quantity);
+            struct Book* freeNode = temp; 
+            temp = temp->next;
+            free(freeNode); 
+        }
+    } else {
+        printf("No books found.\n");
     }
 }
 
@@ -443,9 +487,8 @@ struct Book* findBookByID(int book_id) {
     int m = TABLE_SIZE;
     int hKey1 = book_id % m;
     int hKey2 = 7 - (book_id % (m - 3)); 
-    int index = 0;
-    int i = 0;
-
+    int index = 1;
+    int i=0; 
     while (i < TABLE_SIZE) {
         index = (index + i * hKey2) % m; 
         if (BookTable[index] != NULL) {
@@ -475,27 +518,6 @@ void searchBookID() {
     }
 }
 
-//Manage Customer 
-// Search Customer_id
-//struct Customer* findCustomerByID(int customer_id) {
-//    int m = TABLE_SIZE;
-//    int hKey1 = customer_id % m;
-//    int hKey2 = 7 - (customer_id % (m - 3));
-//    int index;
-//    int  i;
-//    for (i = 0; i < TABLE_SIZE; i++) {
-//        index = (hKey1 + i * hKey2) % m;
-//        // Tim sach bang ID
-//        if (CustomerTable[index] != NULL && CustomerTable[index]->customer_id == customer_id) {
-//            return CustomerTable[index]; 
-//        }
-//        if (CustomerTable[index] == NULL) {
-//            return NULL; // KhÙng tÏm th?y
-//        }
-//    }
-//    return NULL; // KhÙng tÏm thay
-//}
-
 struct Customer* findCustomerByID(int customer_id) {
     int m = TABLE_SIZE;
     int hKey1 = customer_id % m;
@@ -520,7 +542,7 @@ struct Customer* findCustomerByID(int customer_id) {
 }
 void searchCustomerByID() {
     int customer_id;
-    printf("Enter the book ID to search: ");
+    printf("Enter the Customer ID to search: ");
     scanf("%d", &customer_id);
 
     struct Customer* customer = findCustomerByID(customer_id);
@@ -704,11 +726,11 @@ void deleteCustomer() {
 //Borrow Book 
 void displayborrowBook()
 {
-    printf(YELLOW "All borrowed books:\n" RESET);
-
-    printf(YELLOW "----------------------------------------------------------------------------------------------------------------------------------------\n" RESET);
-    printf(YELLOW "| %-10s | %-10s | %-30s | %-10s |\n" RESET, "Borrow ID", "Book ID", "Customer Name", "Quantity");
-    printf(YELLOW "----------------------------------------------------------------------------------------------------------------------------------------\n" RESET);
+//    printf(YELLOW "All borrowed books:\n" RESET);
+//
+//    printf(YELLOW "----------------------------------------------------------------------------------------------------------------------------------------\n" RESET);
+//    printf(YELLOW "| %-10s | %-10s | %-30s | %-10s |\n" RESET, "Borrow ID", "Book ID", "Customer Name", "Quantity");
+//    printf(YELLOW "----------------------------------------------------------------------------------------------------------------------------------------\n" RESET);
     size_t i; 
     for (i = 0; i < borrowBookMap->bucket_count; i++)
     {
@@ -923,7 +945,7 @@ void deletereturnBook() {
 }
 
 // Display all return books
-void displayReturnBooks() {
+void displayReturnBook() {
     printf("\nList of Return Books:\n");
     int i;
     for (i = 0; i < TABLE_SIZE; i++) {
@@ -962,7 +984,7 @@ void manageBook() {
                 deleteBook();
                 break;
             case 5:
-                sortBooksByQuantity();  
+                sortBookByQuantity();  
                 break;
             case 6:
                 searchBookID();  
@@ -1059,7 +1081,7 @@ void manageReturnBook() {
 
         switch (choice) {
             case 1:
-                displayreturnBook();
+                displayReturnBook();
                 break;
             case 2:
                 addreturnBook();
@@ -1099,7 +1121,7 @@ int login() {
 
 // Main function
 int main() {
-	 enableVirtualTerminalProcessing();
+//	 enableVirtualTerminalProcessing();
     bookMap = hashmap_create(TABLE_SIZE, book_hash, book_compare);
     // Read the books.csv file and store the data in bookMap
     read_books_csv(BOOK_FILE);
@@ -1118,29 +1140,29 @@ int main() {
             printf("Enter your choice: ");
             scanf("%d", &choice);
             
-            setColor(BLUE);
-        printf("\nLibrary Management System\n");
-        setColor(RED);
-        printf("1. ");
-        setColor(YELLOW);
-        printf("Manage Books\n");
-        setColor(RED);
-        printf("2. ");
-        setColor(YELLOW);
-        printf("Manage Customers\n");
-        setColor(RED);
-        printf("3. ");
-        setColor(YELLOW);
-        printf("Manage Borrowed Books\n");
-        setColor(RED);
-        printf("4. ");
-        setColor(YELLOW);
-        printf("Manage Returned Books\n");
-        setColor(RED);
-        printf("5. ");
-        setColor(YELLOW);
-        printf("Exit\n");
-        setColor(BLUE);
+//            setColor(BLUE);
+//        printf("\nLibrary Management System\n");
+//        setColor(RED);
+//        printf("1. ");
+//        setColor(YELLOW);
+//        printf("Manage Books\n");
+//        setColor(RED);
+//        printf("2. ");
+//        setColor(YELLOW);
+//        printf("Manage Customers\n");
+//        setColor(RED);
+//        printf("3. ");
+//        setColor(YELLOW);
+//        printf("Manage Borrowed Books\n");
+//        setColor(RED);
+//        printf("4. ");
+//        setColor(YELLOW);
+//        printf("Manage Returned Books\n");
+//        setColor(RED);
+//        printf("5. ");
+//        setColor(YELLOW);
+//        printf("Exit\n");
+//        setColor(BLUE);
         printf("Enter your choice: ");
         scanf("%d", &choice);
             switch (choice) {
@@ -1168,6 +1190,5 @@ int main() {
     }
 
     return 0;
-}
 }
 
