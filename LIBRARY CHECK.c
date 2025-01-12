@@ -139,7 +139,7 @@ struct Customer {
 struct borrowBook {
     int borrow_id;
     int book_id;
-    char customer_name[30];
+    int customer_id;
     int quantity;
     struct borrowBook* next;
 };
@@ -297,12 +297,70 @@ void read_books_csv(const char *filename)
     }
     fclose(file);
 }
+
+//struct Book* findBookByID(int book_id) {
+//    int m = TABLE_SIZE;
+//    int hKey1 = book_id % m;
+//    int hKey2 = 7 - (book_id % (m - 3)); 
+//    int index = 0;
+//    int i=0; 
+//    while (i < TABLE_SIZE) {
+//        index = (index + i * hKey2) % m; 
+//        if (BookTable[index] != NULL) {
+//            struct Book* current = BookTable[index];
+//            while (current != NULL) {
+//                if (current->book_id == book_id) {
+//                    return current; 
+//                }
+//                current = current->next;
+//            }
+//        } 
+//        i++;
+//    }
+//    return NULL; // Customer not found
+//}
+
+//void searchBookID() {
+//    int book_id;
+//    printf("Enter the book ID to search: ");
+//    scanf("%d", &book_id);
+//
+//    struct Book* book = findBookByID(book_id); // Searching for the book
+//    if (book != NULL) {
+//        printf("Book found: ID = %d, Title = %s, Author = %s, Quantity = %d\n",
+//               book->book_id, book->title, book->author, book->quantity);
+//    } else {
+//        printf("Book not found.\n");
+//    }
+//}
+
+struct Book* findBookByID(int book_id) {
+    int key = book_id;
+    struct Book* book = (struct Book*) hashmap_get(bookMap, &key); // S? d?ng hashmap_get đ? t?m ki?m trong b?ng băm
+    return book;
+}
+
+void searchBookID() {
+    int book_id;
+    printf("Enter the book ID to search: ");
+    scanf("%d", &book_id);
+
+    struct Book* book = findBookByID(book_id); // S? d?ng hàm t?m ki?m s?a l?i
+    if (book != NULL) {
+        printf("Book found: ID = %d, Title = %s, Author = %s, Quantity = %d\n",
+               book->book_id, book->title, book->author, book->quantity);
+    } else {
+        printf("Book not found.\n");
+    }
+}
+
+
 void displayBook()
 {
-//    printf(YELLOW "All books in the library:\n" RESET);
-//    printf(YELLOW "------------------------------------------------------------------------------------------------------------------\n" RESET);
-//    printf(YELLOW "| %-10s | %-50s | %-30s | %-10s |\n" RESET, "Book ID", "Title", "Author", "Quantity");
-//    printf(YELLOW "------------------------------------------------------------------------------------------------------------------\n" RESET);
+    printf(YELLOW "All books in the library:\n" RESET);
+    printf(YELLOW "------------------------------------------------------------------------------------------------------------------\n" RESET);
+    printf(YELLOW "| %-10s | %-50s | %-30s | %-10s |\n" RESET, "Book ID", "Title", "Author", "Quantity");
+    printf(YELLOW "------------------------------------------------------------------------------------------------------------------\n" RESET);
     size_t i; 
     for (i = 0; i < bookMap->bucket_count; i++)
     {
@@ -317,21 +375,45 @@ void displayBook()
             node = node->next;
         }
     }
-//    printf(YELLOW "------------------------------------------------------------------------------------------------------------------\n" RESET);
+    printf(YELLOW "------------------------------------------------------------------------------------------------------------------\n" RESET);
 }
 
 void addBook()
 {
     struct Book *new_book = (struct Book *)malloc(sizeof(struct Book));
+    if (!new_book)
+    {
+        printf("Memory allocation failed. Cannot add book.\n");
+        return;
+    }
+
     printf("Enter book ID: ");
     scanf("%d", &new_book->book_id);
+    
+    // Ki?m tra xem ID sách có trùng l?p không
+    if (findBookByID(new_book->book_id) != NULL)
+    {
+        printf("Error: Book ID %d already exists. Cannot add.\n", new_book->book_id);
+        free(new_book); // Gi?i phóng b? nh? khi không c?n s? d?ng
+        return;
+    }
+    
     printf("Enter book title: ");
     scanf(" %[^\n]", new_book->title);
+    
     printf("Enter book author: ");
     scanf(" %[^\n]", new_book->author);
-    printf("Enter book quantity: ");
-    scanf("%d", &new_book->quantity);
+    
+    do {
+        printf("Enter book quantity: ");
+        scanf("%d", &new_book->quantity);
+        if (new_book->quantity < 0) {
+            printf(RED "Error: Quantity cannot be negative. Please enter a valid quantity.\n" RESET);
+        }
+    } while (new_book->quantity < 0);
+    
     create_book(bookMap, new_book);
+    printf("Book added successfully.\n");
 }
 
 void editBook()
@@ -353,6 +435,7 @@ void editBook()
     printf("Enter new quantity (current: %d): ", book->quantity);
     scanf("%d", &book->quantity);
     update_book(bookMap, book);
+    printf("Book updated successfully.\n");
 }
 void delete_book_from_map(int book_id)
 {
@@ -419,12 +502,15 @@ void sortBookByQuantity() {
 
     struct Book* head = NULL;
     struct Book* tail = NULL;
+
+    // Duy?t qua t?t c? các bucket c?a b?ng băm
     int i; 
 	for (i = 0; i < TABLE_SIZE; i++) {
         HashMapNode* node = bookMap->buckets[i];
         while (node) {
             struct Book* book = (struct Book*)node->value;
 
+            // Sao chép ph?n t? sách
             struct Book* newNode = (struct Book*)malloc(sizeof(struct Book));
             if (!newNode) {
                 perror("Memory allocation failed");
@@ -433,7 +519,7 @@ void sortBookByQuantity() {
             *newNode = *book;
             newNode->next = NULL;
 
-            // Thêm vào danh sách liên ketket
+            // Thêm vào danh sách liên k?t
             if (!head) {
                 head = tail = newNode;
             } else {
@@ -443,10 +529,11 @@ void sortBookByQuantity() {
             node = node->next;
         }
     }
-	
+
+    // S?p x?p danh sách
     sortBook(&head);
 
-    // DisplayDisplay
+    // Hi?n th? danh sách đ? s?p x?p
     printf("Books sorted by quantity:\n");
     struct Book* temp = head;
     while (temp) {
@@ -457,40 +544,8 @@ void sortBookByQuantity() {
     }
 }
 
-struct Book* findBookByID(int book_id) {
-    int m = TABLE_SIZE;
-    int hKey1 = book_id % m;
-    int hKey2 = 7 - (book_id % (m - 3)); 
-    int index = 1;
-    int i=0; 
-    while (i < TABLE_SIZE) {
-        index = (index + i * hKey2) % m; 
-        if (BookTable[index] != NULL) {
-            struct Book* current = BookTable[index];
-            while (current != NULL) {
-                if (current->book_id == book_id) {
-                    return current; 
-                }
-                current = current->next;
-            }
-        } 
-        i++;
-    }
-    return NULL; // Customer not found
-}
-void searchBookID() {
-    int book_id;
-    printf("Enter the book ID to search: ");
-    scanf("%d", &book_id);
 
-    struct Book* book = findBookByID(book_id);
-    if (book != NULL) {
-        printf("Book found: ID = %d, Title = %s, Author = %s, Quantity = %d\n",
-               book->book_id, book->title, book->author, book->quantity);
-    } else {
-        printf("Book not found.\n");
-    }
-}
+
 
 struct Customer* findCustomerByID(int customer_id) {
     int m = TABLE_SIZE;
@@ -536,30 +591,23 @@ void load_data() {
         printf("Error: Unable to open file %s for reading.\n", FILENAME);
         return;
     }
-
     char line[200];
     while (fgets(line, sizeof(line), file)) {
         int customer_id;
         char customer_name[30], address[50], phone[15];
-
-        // Read data from the line
         if (sscanf(line, "%d,%29[^,],%49[^,],%14s", &customer_id, customer_name, address, phone) == 4) {
-            // Remove leading single quote from phone number if it exists
-            if (phone[0] == '\'') {
-                memmove(phone, phone + 1, strlen(phone)); // Shift the string left
-            }
             unsigned int index = hash(customer_id);
+
             struct Customer* newCustomer = (struct Customer*)malloc(sizeof(struct Customer));
             if (!newCustomer) {
                 printf("Error: Memory allocation failed.\n");
                 fclose(file);
                 return;
             }
-
             newCustomer->customer_id = customer_id;
             strcpy(newCustomer->customer_name, customer_name);
             strcpy(newCustomer->address, address);
-            strcpy(newCustomer->phone, phone); // Save the cleaned phone number
+            strcpy(newCustomer->phone, phone);
             newCustomer->next = CustomerTable[index];
             CustomerTable[index] = newCustomer;
         }
@@ -575,40 +623,34 @@ void save_data(const char* filename) {
         printf("Error: Unable to open file %s for writing.\n", filename);
         return;
     }
-    for (int i = 0; i < TABLE_SIZE; i++) {
+    
+    int i;
+    for (i = 0; i < TABLE_SIZE; i++) {
         struct Customer* current = CustomerTable[i];
         while (current) {
             fprintf(file, "%d,%s,%s,%s\n", current->customer_id, current->customer_name, current->address, current->phone);
             current = current->next;
         }
     }
+
     fclose(file);
     printf("Data saved successfully to %s.\n", filename);
 }
 
-int getMaxCustomerID() {
-    int max_id = 0;
-    for (int i = 0; i < TABLE_SIZE; i++) {
-        struct Customer* current = CustomerTable[i];
-        while (current) {
-            if (current->customer_id > max_id) {
-                max_id = current->customer_id;
-            }
-            current = current->next;
-        }
-    }
-    return max_id;
-}
 // Add a new customer
 void addCustomer() {
-    char customer_name[30], address[50], phone[15];
-
-    // Get the maximum current customer ID and assign the next ID
-    int customer_id = getMaxCustomerID() + 1;
-
+    int customer_id;
+    char customer_name[30];
+    char address[50];
+    char phone[15];
+    printf("Enter customer ID: ");
+    scanf("%d", &customer_id);
+    if (findCustomerByID(customer_id)) {
+        printf("Customer ID %d already exists in the system.\n", customer_id);
+        return;
+    }
     printf("Enter customer name: ");
     scanf(" %[^\n]", customer_name);
-
     printf("Enter address: ");
     scanf(" %[^\n]", address);
 
@@ -619,7 +661,8 @@ void addCustomer() {
 
         if (strlen(phone) == 10) {
             validPhone = 1;
-            for (int i = 0; i < 10; i++) {
+            int i;
+            for (i = 0; i < 10; i++) {
                 if (!isdigit(phone[i])) {
                     validPhone = 0;
                     break;
@@ -633,12 +676,11 @@ void addCustomer() {
     }
 
     unsigned int index = hash(customer_id);
-
     struct Customer* newCustomer = (struct Customer*)malloc(sizeof(struct Customer));
-    // if (!newCustomer) {
-    //     printf("Error: Memory allocation failed.\n");
-    //     return;
-    // }
+    if (!newCustomer) {
+        printf("Error: Memory allocation failed.\n");
+        return;
+    }
     newCustomer->customer_id = customer_id;
     strcpy(newCustomer->customer_name, customer_name);
     strcpy(newCustomer->address, address);
@@ -650,7 +692,6 @@ void addCustomer() {
 
     printf("Customer added successfully with ID: %d\n", customer_id);
 }
-
 // Display all customers
 void displayCustomer() {
     printf("Customer List:\n");
@@ -658,8 +699,8 @@ void displayCustomer() {
     for (i = 0; i < TABLE_SIZE; i++) {
         struct Customer* current = CustomerTable[i];
         while (current) {
-            printf("ID: %d, Name: %s, Address: %s, Phone: %s\n",
-                   current->customer_id, current->customer_name, current->address, current->phone);
+            printf(YELLOW "| %-10d | %-30s | %-30s | %-30s |\n" RESET,
+			current->customer_id, current->customer_name, current->address, current->phone);
             current = current->next;
         }
     }
@@ -674,35 +715,15 @@ void editCustomer() {
     if (customer == NULL) {
         printf("Customer not found.\n");
     } else {
-        printf("Enter new address: ");.
+        printf("Enter new address: ");
         scanf(" %[^\n]", customer->address);
+        printf("Enter new phone number: ");
+        scanf("%s", customer->phone);
 
-        char phone[15];  // Declare the 'phone' variable here
-        int validPhone = 0;
-        while (!validPhone) {
-            printf("Enter phone number (10 digits only): ");
-            scanf("%s", phone);
-
-            if (strlen(phone) == 10) {
-                validPhone = 1;
-                int i;
-                for (i = 0; i < 10; i++) {
-                    if (!isdigit(phone[i])) {
-                        validPhone = 0;
-                        break;
-                    }
-                }
-            }
-
-            if (!validPhone) {
-                printf("Invalid phone number! Please enter exactly 10 digits (no letters or special characters).\n");
-            }
-        }
         save_data(FILENAME);
         printf("Customer updated successfully.\n");
     }
 }
-
 
 void deleteCustomer() {
     int customer_id;
@@ -734,11 +755,11 @@ void deleteCustomer() {
 //Borrow Book 
 void displayborrowBook()
 {
-//    printf(YELLOW "All borrowed books:\n" RESET);
-//
-//    printf(YELLOW "----------------------------------------------------------------------------------------------------------------------------------------\n" RESET);
-//    printf(YELLOW "| %-10s | %-10s | %-30s | %-10s |\n" RESET, "Borrow ID", "Book ID", "Customer Name", "Quantity");
-//    printf(YELLOW "----------------------------------------------------------------------------------------------------------------------------------------\n" RESET);
+    printf(YELLOW "All borrowed books:\n" RESET);
+
+    printf(YELLOW "----------------------------------------------------------------------------------------------------------------------------------------\n" RESET);
+    printf(YELLOW "| %-10s | %-10s | %-30s | %-10s |\n" RESET, "Borrow ID", "Book ID", "Customer Name", "Quantity");
+    printf(YELLOW "----------------------------------------------------------------------------------------------------------------------------------------\n" RESET);
     size_t i; 
     for (i = 0; i < borrowBookMap->bucket_count; i++)
     {
@@ -748,7 +769,18 @@ void displayborrowBook()
             struct borrowBook *borrow = (struct borrowBook *)node->value;
             if (borrow != NULL)
             {
-                printf(YELLOW "| %-10d | %-10d | %-30s | %-10d |\n" RESET, borrow->borrow_id, borrow->book_id, borrow->customer_name, borrow->quantity);
+//            	char *book_name = getBookNameById(borrow->book_id);
+//                if (book_name == NULL) {
+//                    book_name = "Unknown";
+//                }
+//            
+//            char *customer_name = getCustomerNameById(borrow->customer_id);
+//                if (customer_name == NULL) {
+//                    customer_name = "Unknown";
+//                }
+                
+                printf("|%-10d | %-30d | %-30d | %-20d |\n",
+                       borrow->borrow_id, borrow->book_id,borrow->customer_id, borrow->quantity);
             }
             node = node->next;
         }
@@ -770,8 +802,14 @@ void addborrowBook()
         free(new_borrow);
         return;
     }
-    printf("Enter customer name: ");
-    scanf(" %[^\n]", new_borrow->customer_name);
+    printf("Enter customer ID: ");
+    scanf("%d", &new_borrow->customer_id);
+    struct Customer *customer = findCustomerByID(new_borrow->customer_id);
+    if (customer == NULL) {
+        printf("Customer ID not found.\n");
+        free(new_borrow);
+        return;
+    }
     printf("Enter quantity to borrow: ");
     scanf("%d", &new_borrow->quantity);
     if (new_borrow->quantity > book->quantity)
@@ -786,6 +824,8 @@ void addborrowBook()
     int *key = (int *)malloc(sizeof(int));
     *key = new_borrow->borrow_id;
     hashmap_put(borrowBookMap, key, new_borrow);
+    
+    printf("Borrow record added successfully for Customer ID: %d.\n", new_borrow->customer_id);
 }
 
 void editborrowBook()
@@ -869,7 +909,6 @@ void deleteborrowBook()
 
 //Manage Return Book 
 
-//Manage Return Book 
 void addreturnBook() {
     int borrow_id, book_id;
     int customer_id;
@@ -881,32 +920,37 @@ void addreturnBook() {
     printf("Enter customer ID: ");
     scanf("%d", &customer_id);
 
-    struct Customer* customer = findCustomerByID(customer_id);  // Updated to get the pointer
-    int bookIndex = findBookByID(book_id);
-
-    if (customer != NULL && bookIndex != -1) {  // Check for valid customer pointer
+    struct Customer* customer = findCustomerByID(customer_id);
+    struct Book* book = read_book(bookMap, book_id);
+    
+    if (customer != NULL && book != NULL) {  // Check for valid customer pointer
         struct returnBook* newReturn = (struct returnBook*)malloc(sizeof(struct returnBook));
         newReturn->borrow_id = borrow_id;
         char customer_id_str[20];
         sprintf(customer_id_str, "%d", customer_id);  // Assuming customer_id is a valid integer
-        unsigned int key = hash(customer_id_str);
+        
+		unsigned int key = hash_string(customer_id_str);
+        
         int index = key % TABLE_SIZE;
+        
         newReturn->next = returnBookTable[index];
         returnBookTable[index] = newReturn;
 
-        BookTable[bookIndex]->quantity += 1;
+         book->quantity += 1; ;
         printf("Return added successfully and book quantity updated.\n");
     } else {
         printf("Invalid customer ID or book ID.\n");
     }
 }
 
+
 void editreturnBook() {
     int borrow_id;
     printf("Enter the borrow ID to update: ");
     scanf("%d", &borrow_id);
-
-    for (int i = 0; i < TABLE_SIZE; i++) {
+    
+    int i;
+    for (i = 0; i < TABLE_SIZE; i++) {
         struct returnBook* current = returnBookTable[i];
         while (current) {
             if (current->borrow_id == borrow_id) {
@@ -919,15 +963,16 @@ void editreturnBook() {
         }
     }
     printf("Return book not found.\n");
-    
 }
+
 
 void deletereturnBook() {
     int borrow_id;
     printf("Enter the borrow ID to delete: ");
     scanf("%d", &borrow_id);
-
-    for (int i = 0; i < TABLE_SIZE; i++) {
+    
+    int i;
+    for (i = 0; i < TABLE_SIZE; i++) {
         struct returnBook* current = returnBookTable[i];
         struct returnBook* prev = NULL;
         while (current) {
@@ -947,6 +992,7 @@ void deletereturnBook() {
     }
     printf("Return book not found.\n");
 }
+
 // Display all return books
 void displayReturnBook() {
     printf("\nList of Return Books:\n");
@@ -954,7 +1000,7 @@ void displayReturnBook() {
     for (i = 0; i < TABLE_SIZE; i++) {
         struct returnBook* current = returnBookTable[i];
         while (current) {
-            printf("Borrow ID: %d\n", current->borrow_id);
+            printf(YELLOW "Borrow ID: %d\n" RESET, current->borrow_id);
             current = current->next;
         }
     }
