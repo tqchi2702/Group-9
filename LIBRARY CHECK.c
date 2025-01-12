@@ -674,15 +674,35 @@ void editCustomer() {
     if (customer == NULL) {
         printf("Customer not found.\n");
     } else {
-        printf("Enter new address: ");
+        printf("Enter new address: ");.
         scanf(" %[^\n]", customer->address);
-        printf("Enter new phone number: ");
-        scanf("%s", customer->phone);
 
+        char phone[15];  // Declare the 'phone' variable here
+        int validPhone = 0;
+        while (!validPhone) {
+            printf("Enter phone number (10 digits only): ");
+            scanf("%s", phone);
+
+            if (strlen(phone) == 10) {
+                validPhone = 1;
+                int i;
+                for (i = 0; i < 10; i++) {
+                    if (!isdigit(phone[i])) {
+                        validPhone = 0;
+                        break;
+                    }
+                }
+            }
+
+            if (!validPhone) {
+                printf("Invalid phone number! Please enter exactly 10 digits (no letters or special characters).\n");
+            }
+        }
         save_data(FILENAME);
         printf("Customer updated successfully.\n");
     }
 }
+
 
 void deleteCustomer() {
     int customer_id;
