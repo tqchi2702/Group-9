@@ -926,9 +926,8 @@ void deletereturnBook() {
     int borrow_id;
     printf("Enter the borrow ID to delete: ");
     scanf("%d", &borrow_id);
-    
-    int i;
-    for (i = 0; i < TABLE_SIZE; i++) {
+
+    for (int i = 0; i < TABLE_SIZE; i++) {
         struct returnBook* current = returnBookTable[i];
         struct returnBook* prev = NULL;
         while (current) {
@@ -948,7 +947,6 @@ void deletereturnBook() {
     }
     printf("Return book not found.\n");
 }
-
 // Display all return books
 void displayReturnBook() {
     printf("\nList of Return Books:\n");
