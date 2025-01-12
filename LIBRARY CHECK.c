@@ -548,9 +548,7 @@ void load_data() {
             if (phone[0] == '\'') {
                 memmove(phone, phone + 1, strlen(phone)); // Shift the string left
             }
-
             unsigned int index = hash(customer_id);
-
             struct Customer* newCustomer = (struct Customer*)malloc(sizeof(struct Customer));
             if (!newCustomer) {
                 printf("Error: Memory allocation failed.\n");
@@ -566,7 +564,6 @@ void load_data() {
             CustomerTable[index] = newCustomer;
         }
     }
-
     fclose(file);
     printf("Data loaded successfully from %s.\n", FILENAME);
 }
@@ -578,16 +575,13 @@ void save_data(const char* filename) {
         printf("Error: Unable to open file %s for writing.\n", filename);
         return;
     }
-    
-    int i;
-    for (i = 0; i < TABLE_SIZE; i++) {
+    for (int i = 0; i < TABLE_SIZE; i++) {
         struct Customer* current = CustomerTable[i];
         while (current) {
             fprintf(file, "%d,%s,%s,%s\n", current->customer_id, current->customer_name, current->address, current->phone);
             current = current->next;
         }
     }
-
     fclose(file);
     printf("Data saved successfully to %s.\n", filename);
 }
@@ -641,11 +635,10 @@ void addCustomer() {
     unsigned int index = hash(customer_id);
 
     struct Customer* newCustomer = (struct Customer*)malloc(sizeof(struct Customer));
-    if (!newCustomer) {
-        printf("Error: Memory allocation failed.\n");
-        return;
-    }
-
+    // if (!newCustomer) {
+    //     printf("Error: Memory allocation failed.\n");
+    //     return;
+    // }
     newCustomer->customer_id = customer_id;
     strcpy(newCustomer->customer_name, customer_name);
     strcpy(newCustomer->address, address);
