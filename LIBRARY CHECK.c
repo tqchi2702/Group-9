@@ -905,9 +905,8 @@ void editreturnBook() {
     int borrow_id;
     printf("Enter the borrow ID to update: ");
     scanf("%d", &borrow_id);
-    
-    int i;
-    for (i = 0; i < TABLE_SIZE; i++) {
+
+    for (int i = 0; i < TABLE_SIZE; i++) {
         struct returnBook* current = returnBookTable[i];
         while (current) {
             if (current->borrow_id == borrow_id) {
@@ -920,8 +919,8 @@ void editreturnBook() {
         }
     }
     printf("Return book not found.\n");
+    
 }
-
 
 void deletereturnBook() {
     int borrow_id;
