@@ -414,72 +414,46 @@ void sortBook(struct Book** headRef) {
     sortBook(&right);
     *headRef = mergeSortedBooks(left, right);
 }
-//
-//// sort and display
-//void sortBookByQuantity() {
-//    struct Book* list = NULL, *tail = NULL;
-//    
-//    int i;
-//    for (i = 0; i < TABLE_SIZE; i++) {
-//        struct Book* current = BookTable[i];
-//        while (current) {
-//            if (!list) list = tail = current;
-//            else { tail->next = current; tail = current; }
-//            current = current->next;
-//        }
-//    }
-//    if (tail) tail->next = NULL;
-//
-//    sortBook(&list);
-//
-//    printf("Books sorted by quantity:\n");
-//    struct Book* temp = list;
-//    while (temp) {
-//        printf("ID: %d, Title: %s, Quantity: %d\n", temp->book_id, temp->title, temp->quantity);
-//        temp = temp->next;
-//    }
-//}
 
 void sortBookByQuantity() {
+
     struct Book* head = NULL;
     struct Book* tail = NULL;
-
-    // Iterate through all buckets of the hash table
     int i; 
-    for (i = 0; i < TABLE_SIZE; i++) {
-        struct Book* current = BookTable[i];
-        while (current) {
-            // Create a new node for each book (to avoid modifying the original list)
+	for (i = 0; i < TABLE_SIZE; i++) {
+        HashMapNode* node = bookMap->buckets[i];
+        while (node) {
+            struct Book* book = (struct Book*)node->value;
+
             struct Book* newNode = (struct Book*)malloc(sizeof(struct Book));
-            *newNode = *current; 
+            if (!newNode) {
+                perror("Memory allocation failed");
+                exit(1);
+            }
+            *newNode = *book;
             newNode->next = NULL;
 
-            // Add the new node to the linked list
+            // Thêm vào danh sách liên ketket
             if (!head) {
                 head = tail = newNode;
             } else {
                 tail->next = newNode;
                 tail = newNode;
             }
-
-            current = current->next;
+            node = node->next;
         }
     }
+	
+    sortBook(&head);
 
-    if (tail) {
-        tail->next = NULL; // Ensure the last node's next pointer is NULL
-        sortBook(&head); 
-
-        printf("Books sorted by quantity:\n");
-        struct Book* temp = head;
-        while (temp) {
-            printf("ID: %d, Title: %s, Quantity: %d\n", temp->book_id, temp->title, temp->quantity);
-            struct Book* freeNode = temp; 
-            temp = temp->next;
-            free(freeNode); 
-        }
-    } else {
-        printf("No books found.\n");
+    // DisplayDisplay
+    printf("Books sorted by quantity:\n");
+    struct Book* temp = head;
+    while (temp) {
+        printf("ID: %d, Title: %s, Quantity: %d\n", temp->book_id, temp->title, temp->quantity);
+        struct Book* freeNode = temp;
+        temp = temp->next;
+        free(freeNode);
     }
 }
 
