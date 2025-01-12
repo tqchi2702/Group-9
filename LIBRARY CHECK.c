@@ -869,6 +869,7 @@ void deleteborrowBook()
 
 //Manage Return Book 
 
+//Manage Return Book 
 void addreturnBook() {
     int borrow_id, book_id;
     int customer_id;
@@ -881,27 +882,24 @@ void addreturnBook() {
     scanf("%d", &customer_id);
 
     struct Customer* customer = findCustomerByID(customer_id);  // Updated to get the pointer
-    struct Book* book = findBookByID(book_id); 
-    
-    if (customer != NULL && book != NULL) {  // Check for valid customer pointer
+    int bookIndex = findBookByID(book_id);
+
+    if (customer != NULL && bookIndex != -1) {  // Check for valid customer pointer
         struct returnBook* newReturn = (struct returnBook*)malloc(sizeof(struct returnBook));
         newReturn->borrow_id = borrow_id;
         char customer_id_str[20];
         sprintf(customer_id_str, "%d", customer_id);  // Assuming customer_id is a valid integer
-        
-		unsigned int key = hash_string(customer_id_str);
-        
+        unsigned int key = hash(customer_id_str);
         int index = key % TABLE_SIZE;
         newReturn->next = returnBookTable[index];
         returnBookTable[index] = newReturn;
 
-         book->quantity += 1; ;
+        BookTable[bookIndex]->quantity += 1;
         printf("Return added successfully and book quantity updated.\n");
     } else {
         printf("Invalid customer ID or book ID.\n");
     }
 }
-
 
 void editreturnBook() {
     int borrow_id;
